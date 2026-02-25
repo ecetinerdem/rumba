@@ -91,7 +91,23 @@ func NewRoom(configFile string, animate bool) *Room {
 		grid[gridWith-1][j] = Cell{Type: "wall", Cleaned: false, Obstacle: true, ObstacleName: "wall"}
 	}
 	// Add furniture
-	// To do
+	for _, f := range roomConfig.Furniture {
+		x := f.X / cellSize
+		y := f.Y / cellSize
+		width := f.Width / cellSize
+		height := f.Height / cellSize
+
+		for i := x; i < x+width; i++ {
+			for j := y; j < y+height; j++ {
+				grid[i][j] = Cell{
+					Type:         "furniture",
+					Cleaned:      false,
+					Obstacle:     true,
+					ObstacleName: f.Name,
+				}
+			}
+		}
+	}
 
 	// Count cleanable cells
 	cleanableCellCount := 0
