@@ -165,9 +165,34 @@ func (room *Room) Display(rumba *Robot, showPath bool) {
 func isInPath(point Point, path []Point) bool {
 
 	for _, p := range path {
-		if p.X == point.X && p.Y == p.Y {
+		if p.X == point.X && p.Y == point.Y {
 			return true
 		}
 	}
 	return false
+}
+
+func displaySummary(room *Room, rumba *Robot, moveCount int, cleaningTime time.Duration) {
+	// Display the final room state with rumba's path
+
+	fmt.Println("\nFinal room state with rumba's path:")
+	room.Display(rumba, true)
+	fmt.Println("\n======== Cleaning Summary ========")
+	fmt.Printf("Room size: %d x %d (%d cm x %d cm)\n", room.Width, room.Height, room.Width*cellSize, room.Height*cellSize)
+
+	// Calculate coverage percantage
+	percentCleaned := float64(room.CleanedCellCount) / float64(room.CleanableCellCount) * 100
+	fmt.Printf("Coverage: %.2f%% (%d/%d cells cleaned)", percentCleaned, room.CleanedCellCount, room.CleanableCellCount)
+
+	// Display time and moves
+
+	fmt.Printf("Total moves: %d\n", moveCount)
+	fmt.Printf("Cleaning time: %v\n", cleaningTime)
+
+	// Calculate efficiency cells cleaned per move
+	efficiency := float64(room.CleanedCellCount) / float64(moveCount)
+	fmt.Printf("Efficiency: %.2f cells cleaned per move \n", efficiency)
+
+	fmt.Println()
+	fmt.Println("===================================")
 }

@@ -20,8 +20,17 @@ func main() {
 	fmt.Println(room.CleanableCellCount)
 
 	// Get a rumba
+	rumba := NewRobot(1, 1)
 
 	// Assign a cleaning algorithm
+	switch algorithm {
+	case "random":
+		rumba.CleanRoom = CleanRandomWalk
+	default:
+		// Do nothing
+	}
 
 	// Clean the room
+	rumba.CleanRoom(room, rumba)
+
 }
