@@ -18,4 +18,10 @@ func main() {
 	room := NewRoom(configFile, animate)
 
 	fmt.Println(room.CleanableCellCount)
+
+	// Get a rumba
+
+	// Assign a cleaning algorithm
+
+	// Clean the room
 }

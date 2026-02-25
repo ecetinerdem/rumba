@@ -23,7 +23,7 @@ const (
 )
 
 type Point struct {
-	x, y int
+	X, Y int
 }
 
 type Cell struct {
@@ -127,4 +127,47 @@ func LoadroomConfig(fileName string) (*RoomConfig, error) {
 	}
 
 	return &config, nil
+}
+
+func (room *Room) Display(rumba *Robot, showPath bool) {
+	// Clear the terminal
+	fmt.Print("\033[H\033[2j")
+
+	for j := range room.Height {
+		for i := range room.Width {
+			if rumba.Position.X == i && rumba.Position.Y == j {
+				fmt.Print(charRobot)
+			} else if showPath && isInPath(Point{X: i, Y: j}, rumba.Path) {
+				fmt.Print(charPath)
+			} else {
+				cell := room.Grid[i][j]
+
+				switch cell.Type {
+				case "wall":
+					fmt.Print(charWall)
+				case "furniture":
+					fmt.Print(charFurniture)
+				case "clean":
+					fmt.Print(charClean)
+				case "dirty":
+					fmt.Print(charDirty)
+				}
+			}
+		}
+		fmt.Println()
+	}
+	// Display Cleaning progress
+	percentCleaned := float64(room.CleanedCellCount) / float64(room.CleanableCellCount) * 100
+	fmt.Printf("Cleaning Progress: %.2f%% (%d/%d cells cleaned)\n", percentCleaned, room.CleanedCellCount, room.CleanableCellCount)
+
+}
+
+func isInPath(point Point, path []Point) bool {
+
+	for _, p := range path {
+		if p.X == point.X && p.Y == p.Y {
+			return true
+		}
+	}
+	return false
 }
