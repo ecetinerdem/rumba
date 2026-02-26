@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"time"
 )
 
@@ -35,17 +36,29 @@ func CleanRoom(room *Room, rumba *Robot) {
 	}
 
 	// for - if the frontier not empty and the room is not  %100 clean
+	for len(frontier) > 0 && room.CleanedCellCount < room.CleanableCellCount {
+		// Get closest frontier point
+		target := getClosestFrontierPoint(rumba.Position, frontier)
 
-	//	// Get closest frontier point
-	//	// If not valid break
-	//	// REmove target from frontier
-	//	// Find path to target use A*
-	//	// If not path found, go to next frontier point(continue)
-	//	// Move along the path
-	//		// Update map(internal)
-	//	// every 10 moves, do a more thorough frontier check
-	//	// Check if we have sufficient coverage - break
+		// If not valid break
 
+		if target.X == -1 && target.Y == -1 {
+			break
+		}
+		// REmove target from frontier
+		delete(frontier, target)
+		// Find path to target use A*
+		path := Astar(room, rumba.Position, target)
+
+		// If not path found, go to next frontier point(continue)
+		if len(path) <= 1 {
+			continue
+		}
+		// Move along the path
+		//		// Update map(internal)
+		// every 10 moves, do a more thorough frontier check
+		// Check if we have sufficient coverage - break
+	}
 	// Final cleanup phase
 }
 
@@ -103,4 +116,18 @@ func addNeighboursToFrontier(position Point, rumbaMap [][]int, frontier map[Poin
 		}
 
 	}
+}
+
+func getClosestFrontierPoint(position Point, frontier map[Point]bool) Point {
+	closestPoint := Point{X: -1, Y: -1}
+	minDistance := math.MaxFloat64
+
+	for point := range frontier {
+		distance := heuristic(position, point)
+		if distance < minDistance {
+			minDistance = distance
+			closestPoint = point
+		}
+	}
+	return closestPoint
 }
