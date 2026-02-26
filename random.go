@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"math/rand"
 	"time"
 )
 
@@ -24,26 +25,131 @@ func CleanRandomWalk(room *Room, rumba *Robot) {
 
 	for moveCount < maxMoves && room.CleanedCellCount < room.CleanableCellCount {
 		// Generate a random angle in radians
+		angle := rand.Float64() * 2 * math.Pi
 
 		// Calculate a direction vector based on angle
+		dx := math.Cos(angle)
+		dy := math.Sin(angle)
 
 		// Use Bresenham's line algorithm to move in that direction until hitting an obsticle
+		moves := moveAtAngleUntillObstacle(room, rumba, dx, dy)
 
 		// If we did not move very much, increment stuck counter and possibly change strategy
+		moveCount += moves
 
 		// If stuck too many times, use a* to find path to neares dirty cell
+		if moves < 3 {
+			stuckCount++
+			if stuckCount >= maxStuckCount {
+				stuckCount = 0
+				dirtyCell := findNearestDirtyCell(room, rumba.Position)
+				if dirtyCell.X != -1 && dirtyCell.Y != -1 {
+					path := Astar(room, rumba.Position, dirtyCell)
+					if len(path) > 1 {
+						// Move along the path
+						for i := 1; i < len(path); i++ {
+							rumba.Position = path[i]
+							rumba.Path = append(rumba.Path, path[i])
+							Clean(rumba, room)
+							if room.Animate {
+								room.Display(rumba, false)
+								time.Sleep(moveDelay)
+							}
+							moveCount++
+						}
+					}
+				}
+			}
+		} else {
+			stuckCount = 0
+		}
 
 		// Add some adaptive behaviour. Scan for dirty cells every once in a while
-
-		// end for
-
-		// Final sweep to complete coverage
+		if moveCount%20 == 0 {
+			if rand.Float64() < 0.3 { // %30 chance to target specific area
+				dirtyCell := findNearestDirtyCell(room, rumba.Position)
+				if dirtyCell.X != -1 && dirtyCell.Y != -1 {
+					path := Astar(room, rumba.Position, dirtyCell)
+					if len(path) > 1 {
+						for i := 1; i < len(path); i++ {
+							rumba.Position = path[i]
+							rumba.Path = append(rumba.Path, path[i])
+							Clean(rumba, room)
+							if room.Animate {
+								room.Display(rumba, false)
+								time.Sleep(moveDelay)
+							}
+							moveCount++
+						}
+					}
+				}
+			}
+		}
+	}
+	// Final sweep to complete coverage
+	for i := 1; i < room.Width-1; i++ {
+		for j := 1; j < room.Height; j++ {
+			if !room.Grid[i][j].Cleaned && !room.Grid[i][j].Obstacle {
+				path := Astar(room, rumba.Position, Point{X: i, Y: j})
+				if len(path) == 0 {
+					continue
+				}
+				for k := 1; k < len(path); k++ {
+					rumba.Position = path[k]
+					rumba.Path = append(rumba.Path, path[k])
+					Clean(rumba, room)
+					if room.Animate {
+						room.Display(rumba, false)
+						time.Sleep(moveDelay)
+					}
+					moveCount++
+				}
+			}
+		}
 	}
 
 	//Calculate cleaning time
-
 	cleaningTime := time.Since(startTime)
 	displaySummary(room, rumba, moveCount, cleaningTime)
+}
+
+func moveAtAngleUntillObstacle(room *Room, rumba *Robot, dx, dy float64) int {
+	moveCount := 0
+
+	maxDistance := math.Max(float64(room.Width), float64(room.Height)) * 2
+
+	startX, startY := rumba.Position.X, rumba.Position.Y
+
+	endX := startX + int(dx*maxDistance)
+	endY := startY + int(dy*maxDistance)
+
+	points := bresenhamLine(startX, startY, endX, endY)
+
+	// Move along the line until hitting an obstacle
+	for i := 1; i < len(points); i++ {
+		x, y := points[i].X, points[i].Y
+
+		if !room.IsValid(x, y) {
+			break
+		}
+
+		// Move to new position
+		rumba.Position = Point{X: x, Y: y}
+		rumba.Path = append(rumba.Path, rumba.Position)
+		Clean(rumba, room)
+
+		// Animate if appropriate
+
+		if room.Animate {
+			room.Display(rumba, false)
+			time.Sleep(moveDelay)
+		}
+
+		moveCount++
+
+	}
+
+	return moveCount
 }
 
 func bresenhamLine(x0, y0, x1, y1 int) []Point {
@@ -88,12 +194,12 @@ func bresenhamLine(x0, y0, x1, y1 int) []Point {
 		}
 
 		// If moving in the y direction would be keep us closer to the ideal line
-		if e2 < -dx {
+		if e2 < dx {
 			if y0 == y1 {
 				break
 			}
 			//Update the error and move in the y-direction
-			err -= dx
+			err += dx
 			y0 += sy
 		}
 
