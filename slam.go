@@ -55,9 +55,38 @@ func CleanRoom(room *Room, rumba *Robot) {
 			continue
 		}
 		// Move along the path
-		//		// Update map(internal)
+		for i := 1; i < len(path); i++ {
+			// Update rumba position
+			rumba.Position = path[i]
+			rumba.Path = append(rumba.Path, rumba.Position)
+			// Clean Position
+			Clean(rumba, room)
+
+			// Mark as visited
+			visited[rumba.Position] = true
+
+			// Update map(internal) based upan what we can see from current position
+			updateRumbaMap(rumba.Position, rumbaMap, room)
+
+			// Update frontier with newly discovered cells
+			addNeighboursToFrontier(rumba.Position, rumbaMap, frontier, visited, room)
+
+			// Display the state
+			if room.Animate {
+				room.Display(rumba, false)
+				time.Sleep(moveDelay)
+			}
+			moveCount++
+		}
+
 		// every 10 moves, do a more thorough frontier check
+		if moveCount%10 == 0 {
+			updateAllFrontiers(rumbaMap, frontier, visited, room)
+		}
 		// Check if we have sufficient coverage - break
+		if float64(room.CleanedCellCount)/float64(room.CleanableCellCount) > 0.95 {
+			break
+		}
 	}
 	// Final cleanup phase
 }
@@ -130,4 +159,24 @@ func getClosestFrontierPoint(position Point, frontier map[Point]bool) Point {
 		}
 	}
 	return closestPoint
+}
+
+func updateAllFrontiers(rumbaMap [][]int, frontier map[Point]bool, visited map[Point]bool, room *Room) {
+	for x := 1; x < room.Width-1; x++ {
+		for y := 1; y < room.Height-1; y++ {
+			// If a cell free but not visited add to frontier
+			point := Point{X: x, Y: y}
+			if rumbaMap[x][y] == 1 && !visited[point] && !frontier[point] && !room.Grid[x][y].Obstacle {
+				// Check to see if it is accesiable. At least has one visited neighbour
+				for _, dir := range directions {
+					nx, ny := x+dir[0], y+dir[1]
+					neighbourPoint := Point{x: nx, Y: ny}
+					if nx >= 0 && nx < room.Width && ny < room.Height && ny >= 0 && visited[neighbourPoint] {
+						frontier[point] = true
+						break
+					}
+				}
+			}
+		}
+	}
 }
