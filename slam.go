@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func CleanRoom(room *Room, rumba *Robot) {
+func CleanRoomSlam(room *Room, rumba *Robot) {
 
 	// Set start time and moveCount
 	startTime := time.Now()
@@ -89,6 +89,42 @@ func CleanRoom(room *Room, rumba *Robot) {
 		}
 	}
 	// Final cleanup phase
+	cleanRemainingCells(room, rumba, &moveCount)
+
+	// Calculate time
+	cleaningTime := time.Since(startTime)
+	// Display statistics
+	displaySummary(room, rumba, moveCount, cleaningTime)
+}
+
+func cleanRemainingCells(room *Room, rumba *Robot, moveCount *int) {
+	// Find all cells that should be cleanable but not cleaned
+	for i := 1; i < room.Width-1; i++ {
+		for j := 0; j < room.Height-1; j++ {
+			// If the cell is not an obstacle, not cleaned and known to rumba
+			if !room.Grid[i][j].Obstacle && !room.Grid[i][j].Cleaned {
+				path := Astar(room, rumba.Position, Point{X: i, Y: j})
+				if len(path) <= 1 {
+					continue
+				}
+				// Move along the path
+
+				for k := 1; k < len(path); k++ {
+					rumba.Position = path[k]
+					rumba.Path = append(rumba.Path, path[k])
+
+					// Clean
+					Clean(rumba, room)
+
+					if room.Animate {
+						room.Display(rumba, false)
+						time.Sleep(moveDelay)
+					}
+					*moveCount++
+				}
+			}
+		}
+	}
 }
 
 func initializeRobotMap(width, height int) [][]int {
@@ -170,7 +206,7 @@ func updateAllFrontiers(rumbaMap [][]int, frontier map[Point]bool, visited map[P
 				// Check to see if it is accesiable. At least has one visited neighbour
 				for _, dir := range directions {
 					nx, ny := x+dir[0], y+dir[1]
-					neighbourPoint := Point{x: nx, Y: ny}
+					neighbourPoint := Point{X: nx, Y: ny}
 					if nx >= 0 && nx < room.Width && ny < room.Height && ny >= 0 && visited[neighbourPoint] {
 						frontier[point] = true
 						break

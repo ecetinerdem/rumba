@@ -26,6 +26,8 @@ func main() {
 	switch algorithm {
 	case "random":
 		rumba.CleanRoom = CleanRandomWalk
+	case "slam":
+		rumba.CleanRoom = CleanRoomSlam
 	default:
 		// Do nothing
 	}
