@@ -35,15 +35,34 @@ func CleanRoomSpiral(room *Room, rumba *Robot) {
 	spiralPoints := generateSpiralPattern(room, centerPoint)
 
 	// Follow the spiral pattern (for loop)
+	for _, point := range spiralPoints {
 
-	//	// Skip if cell is already cleaned or obstacle
-	//	// Find path to the next point
-	//	// Move along the path
+		// Skip if cell is already cleaned or obstacle
+		if room.Grid[point.X][point.Y].Cleaned || room.Grid[point.X][point.Y].Obstacle {
+			continue
+		}
 
-	// end for
+		// Find path to the next point
+		path := Astar(room, rumba.Position, point)
+
+		// Move along the path
+		if len(path) > 1 {
+			for i := 1; i < len(path); i++ {
+				rumba.Position = path[i]
+				rumba.Path = append(rumba.Path, rumba.Position)
+				Clean(rumba, room)
+				if room.Animate {
+					room.Display(rumba, false)
+					time.Sleep(moveDelay)
+				}
+				moveCount++
+			}
+		}
+
+	}
 
 	// Final Cleanup
-
+	finalCleanUp(room, rumba, &moveCount)
 	// Calculate cleaning time
 	cleaningTime := time.Since(startTime)
 
@@ -135,4 +154,29 @@ func generateSpiralPattern(room *Room, center Point) []Point {
 
 	return points
 
+}
+
+func finalCleanUp(room *Room, rumba *Robot, moveCount *int) {
+	for i := 1; i < room.Width-1; i++ {
+		for j := 1; j < room.Height-1; j++ {
+			if !room.Grid[i][j].Obstacle && !room.Grid[i][j].Cleaned {
+				// find path to cell
+				path := Astar(room, rumba.Position, Point{X: i, Y: j})
+
+				if len(path) <= 1 {
+					continue
+				}
+				for k := 1; k < len(path); k++ {
+					rumba.Position = path[k]
+					rumba.Path = append(rumba.Path, rumba.Position)
+					Clean(rumba, room)
+					if room.Animate {
+						room.Display(rumba, false)
+						time.Sleep(moveDelay)
+					}
+					*moveCount++
+				}
+			}
+		}
+	}
 }
