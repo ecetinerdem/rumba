@@ -50,6 +50,7 @@ type Room struct {
 	CleanableCellCount int
 	CleanedCellCount   int
 	Animate            bool
+	Cat                *Cat
 }
 
 type RoomConfig struct {
@@ -146,14 +147,16 @@ func LoadroomConfig(fileName string) (*RoomConfig, error) {
 	return &config, nil
 }
 
-func (room *Room) Display(rumba *Robot, showPath bool) {
+func (room *Room) Display(rumba *Robot, cat *Cat, showPath bool) {
 	// Clear the terminal
-	fmt.Print("\033[H\033[2j")
+	fmt.Print("\033[H")
 
 	for j := range room.Height {
 		for i := range room.Width {
 			if rumba.Position.X == i && rumba.Position.Y == j {
 				fmt.Print(charRobot)
+			} else if cat != nil && cat.Position.X == i && cat.Position.Y == j {
+				fmt.Print(charCat)
 			} else if showPath && isInPath(Point{X: i, Y: j}, rumba.Path) {
 				fmt.Print(charPath)
 			} else {
@@ -176,7 +179,9 @@ func (room *Room) Display(rumba *Robot, showPath bool) {
 	// Display Cleaning progress
 	percentCleaned := float64(room.CleanedCellCount) / float64(room.CleanableCellCount) * 100
 	fmt.Printf("Cleaning Progress: %.2f%% (%d/%d cells cleaned)\n", percentCleaned, room.CleanedCellCount, room.CleanableCellCount)
-
+	if cat != nil {
+		fmt.Printf("Rumba position: (%d, %d), Cat position: (%d, %d)\n", rumba.Position.X, rumba.Position.Y, cat.Position.X, cat.Position.Y)
+	}
 }
 
 func isInPath(point Point, path []Point) bool {
@@ -193,7 +198,7 @@ func displaySummary(room *Room, rumba *Robot, moveCount int, cleaningTime time.D
 	// Display the final room state with rumba's path
 
 	fmt.Println("\nFinal room state with rumba's path:")
-	room.Display(rumba, true)
+	room.Display(rumba, room.Cat, true)
 	fmt.Println("\n======== Cleaning Summary ========")
 	fmt.Printf("Room size: %d x %d (%d cm x %d cm)\n", room.Width, room.Height, room.Width*cellSize, room.Height*cellSize)
 

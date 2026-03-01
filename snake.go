@@ -14,12 +14,14 @@ func CleanRoomSnake(room *Room, rumba *Robot) {
 	Clean(rumba, room)
 
 	if room.Animate {
-		room.Display(rumba, false)
+		room.Display(rumba, room.Cat, false)
 		time.Sleep(moveDelay)
 	}
 
 	// Visit each point in coverage pattern(for)
 	for _, point := range coveragePoints {
+
+		MoveCat(room.Cat, room)
 		// Skip cell if already cleaned
 		if room.Grid[point.X][point.Y].Cleaned {
 			continue
@@ -40,9 +42,10 @@ func CleanRoomSnake(room *Room, rumba *Robot) {
 
 			// Clean
 			Clean(rumba, room)
+			MoveCat(room.Cat, room)
 			// Display room
 			if room.Animate {
-				room.Display(rumba, false)
+				room.Display(rumba, room.Cat, false)
 				time.Sleep(moveDelay)
 			}
 			// Increment movecount

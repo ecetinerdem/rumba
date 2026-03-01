@@ -24,7 +24,7 @@ func CleanRoomSpiral(room *Room, rumba *Robot) {
 			rumba.Path = append(rumba.Path, rumba.Position)
 			Clean(rumba, room)
 			if room.Animate {
-				room.Display(rumba, false)
+				room.Display(rumba, room.Cat, false)
 				time.Sleep(moveDelay)
 			}
 			moveCount++
@@ -52,7 +52,7 @@ func CleanRoomSpiral(room *Room, rumba *Robot) {
 				rumba.Path = append(rumba.Path, rumba.Position)
 				Clean(rumba, room)
 				if room.Animate {
-					room.Display(rumba, false)
+					room.Display(rumba, room.Cat, false)
 					time.Sleep(moveDelay)
 				}
 				moveCount++
@@ -171,7 +171,7 @@ func finalCleanUp(room *Room, rumba *Robot, moveCount *int) {
 					rumba.Path = append(rumba.Path, rumba.Position)
 					Clean(rumba, room)
 					if room.Animate {
-						room.Display(rumba, false)
+						room.Display(rumba, room.Cat, false)
 						time.Sleep(moveDelay)
 					}
 					*moveCount++

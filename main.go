@@ -2,22 +2,25 @@ package main
 
 import (
 	"flag"
-	"fmt"
 )
 
 func main() {
 	var configFile, algorithm string
 	var animate bool
+	var cat bool
 
 	flag.StringVar(&configFile, "file", "empty.json", "configuration file")
 	flag.StringVar(&algorithm, "algorithm", "random", "cleaning algorithm")
 	flag.BoolVar(&animate, "animate", true, "animate while cleaning")
+	flag.BoolVar(&cat, "cat", false, "add a cat to the room")
 
 	flag.Parse()
 
 	room := NewRoom(configFile, animate)
 
-	fmt.Println(room.CleanableCellCount)
+	if cat {
+		room.Cat = NewCat(room)
+	}
 
 	// Get a rumba
 	rumba := NewRobot(1, 1)

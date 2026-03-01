@@ -31,7 +31,7 @@ func CleanRoomSlam(room *Room, rumba *Robot) {
 
 	// Display initial state
 	if room.Animate {
-		room.Display(rumba, false)
+		room.Display(rumba, room.Cat, false)
 		time.Sleep(moveDelay)
 	}
 
@@ -73,7 +73,7 @@ func CleanRoomSlam(room *Room, rumba *Robot) {
 
 			// Display the state
 			if room.Animate {
-				room.Display(rumba, false)
+				room.Display(rumba, room.Cat, false)
 				time.Sleep(moveDelay)
 			}
 			moveCount++
@@ -117,7 +117,7 @@ func cleanRemainingCells(room *Room, rumba *Robot, moveCount *int) {
 					Clean(rumba, room)
 
 					if room.Animate {
-						room.Display(rumba, false)
+						room.Display(rumba, room.Cat, false)
 						time.Sleep(moveDelay)
 					}
 					*moveCount++
