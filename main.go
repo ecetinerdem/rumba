@@ -30,6 +30,8 @@ func main() {
 		rumba.CleanRoom = CleanRoomSlam
 	case "spiral":
 		rumba.CleanRoom = CleanRoomSpiral
+	case "snake":
+		rumba.CleanRoom = CleanRoomSnake
 	default:
 		// Do nothing
 	}
