@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -208,7 +209,13 @@ func displaySummary(room *Room, rumba *Robot, moveCount int, cleaningTime time.D
 	// Calculate efficiency cells cleaned per move
 	efficiency := float64(room.CleanedCellCount) / float64(moveCount)
 	fmt.Printf("Efficiency: %.2f cells cleaned per move \n", efficiency)
-
+	// Display encountered Obstacles
+	obstacles := getEncounteredObstaclesList(rumba)
+	if len(obstacles) > 0 {
+		fmt.Printf("Encountered: %s\n", strings.Join(obstacles, ", "))
+	} else {
+		fmt.Println("No obstacles encountered")
+	}
 	fmt.Println()
 	fmt.Println("===================================")
 }
@@ -216,4 +223,15 @@ func displaySummary(room *Room, rumba *Robot, moveCount int, cleaningTime time.D
 func (room *Room) IsValid(x, y int) bool {
 
 	return x >= 0 && x < room.Width && y >= 0 && y < room.Height && !room.Grid[x][y].Obstacle
+}
+
+func getEncounteredObstaclesList(rumba *Robot) []string {
+	var obstacles []string
+
+	for name := range rumba.ObstaclesEncountered {
+		if name != "wall" {
+			obstacles = append(obstacles, name)
+		}
+	}
+	return obstacles
 }
