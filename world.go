@@ -34,6 +34,10 @@ type Cell struct {
 	ObstacleName string
 }
 
+type House struct {
+	Rooms []*Room
+}
+
 type Furniture struct {
 	X      int    `json:"x"`
 	Y      int    `json:"y"`
@@ -83,7 +87,7 @@ func NewRoom(configFile string, animate bool) *Room {
 	// Add walls
 
 	for i := range gridWith {
-		grid[i][0] = Cell{Type: "wall", Cleaned: true, Obstacle: true, ObstacleName: "wall"}
+		grid[i][0] = Cell{Type: "wall", Cleaned: false, Obstacle: true, ObstacleName: "wall"}
 		grid[i][gridHeight-1] = Cell{Type: "wall", Cleaned: false, Obstacle: true, ObstacleName: "wall"}
 
 	}
@@ -131,6 +135,97 @@ func NewRoom(configFile string, animate bool) *Room {
 	}
 }
 
+func NewHouse(configFile string, animate bool) *House {
+	houseConfig, err := LoadHouseConfig(configFile)
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	var house House
+
+	for _, room := range houseConfig {
+		// Convert dimensions to grid cells
+		gridWith := room.Width / cellSize
+		gridHeight := room.Height / cellSize
+
+		grid := make([][]Cell, gridWith)
+
+		for i := range grid {
+			grid[i] = make([]Cell, gridHeight)
+			for j := range grid[i] {
+				grid[i][j] = Cell{Type: "dirty", Cleaned: false, Obstacle: false}
+			}
+		}
+
+		// Add walls
+		for i := range gridWith {
+			grid[i][0] = Cell{Type: "wall", Cleaned: false, Obstacle: true, ObstacleName: "wall"}
+			grid[i][gridHeight-1] = Cell{Type: "wall", Cleaned: false, Obstacle: true, ObstacleName: "wall"}
+		}
+
+		for j := range gridHeight {
+			grid[0][j] = Cell{Type: "wall", Cleaned: false, Obstacle: true, ObstacleName: "wall"}
+			grid[gridWith-1][j] = Cell{Type: "wall", Cleaned: false, Obstacle: true, ObstacleName: "wall"}
+		}
+
+		// Add furniture
+
+		for _, f := range room.Furniture {
+			x := f.X / cellSize
+			y := f.Y / cellSize
+
+			width := f.Width / cellSize
+			height := f.Height / cellSize
+
+			for i := x; i < x+width; i++ {
+				for j := y; j < y+height; j++ {
+					grid[i][j] = Cell{Type: "furniture", Cleaned: false, Obstacle: true, ObstacleName: "furniture"}
+				}
+			}
+		}
+
+		// Count cleanable cells
+		cleanableCellCount := 0
+
+		for i := range gridWith {
+			for j := range gridHeight {
+				if !grid[i][j].Obstacle {
+					cleanableCellCount++
+				}
+			}
+		}
+		r := Room{
+			Grid:               grid,
+			Width:              gridWith,
+			Height:             gridHeight,
+			CleanableCellCount: cleanableCellCount,
+			CleanedCellCount:   0,
+			Animate:            animate,
+		}
+
+		house.Rooms = append(house.Rooms, &r)
+	}
+	return &house
+}
+
+func LoadHouseConfig(filename string) ([]RoomConfig, error) {
+	jsonData, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("error reading config file: %v", err)
+
+	}
+
+	var config []RoomConfig
+
+	if err := json.Unmarshal(jsonData, &config); err != nil {
+		return nil, fmt.Errorf("error parsing json: %v", err)
+	}
+
+	return config, nil
+}
+
 func LoadroomConfig(fileName string) (*RoomConfig, error) {
 	jsonData, err := os.ReadFile(fileName)
 
@@ -149,7 +244,7 @@ func LoadroomConfig(fileName string) (*RoomConfig, error) {
 
 func (room *Room) Display(rumba *Robot, cat *Cat, showPath bool) {
 	// Clear the terminal
-	fmt.Print("\033[H")
+	fmt.Print("\033[H\033[2J\033[3J")
 
 	for j := range room.Height {
 		for i := range room.Width {
