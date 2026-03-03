@@ -8,7 +8,7 @@ import (
 type PersonStatus struct {
 	Name       string
 	IsHome     bool
-	Room       string // person's room name
+	Room       string
 	DoorClosed bool
 }
 
@@ -21,8 +21,6 @@ type LogicalWord struct {
 }
 
 func NewLogicalWorld() *LogicalWord {
-	// Get current day to determine if it is a weekday
-
 	today := time.Now()
 	weekDay := today.Weekday()
 	isWeekDay := weekDay >= time.Monday && weekDay <= time.Friday
@@ -31,7 +29,7 @@ func NewLogicalWorld() *LogicalWord {
 		Jack: PersonStatus{
 			Name:   "Jack",
 			IsHome: false,
-			Room:   "Jack's room",
+			Room:   "Jack's Room",
 		},
 		Sarah: PersonStatus{
 			Name:   "Sarah",
@@ -50,9 +48,11 @@ func NewLogicalWorld() *LogicalWord {
 }
 
 func (world *LogicalWord) UpdateObjectFound(objectName string) {
+	// Avoid processing duplicates
+	if world.Objects[objectName] {
+		return
+	}
 	world.Objects[objectName] = true
-
-	// Apply object to person identification rules
 
 	// Rule 1: If backpack found Jack is home
 	if objectName == "backpack" {
@@ -73,17 +73,15 @@ func (world *LogicalWord) UpdateObjectFound(objectName string) {
 	}
 }
 
-// Update door status updates whether Johnny's door open or closed
+// UpdateDoorStatus updates whether Johnny's door is open or closed
 func (world *LogicalWord) UpdateDoorStatus(doorName string, isClosed bool) {
-
-	if doorName == "Johnny's Door" {
+	if doorName == "johnny's door" {
 		world.Johnny.DoorClosed = isClosed
 		fmt.Printf("Logic: Johnny's door is now %s\n", map[bool]string{true: "closed", false: "open"}[isClosed])
 	}
 }
 
-// Determine the rules cleaning priority
-
+// DetermineCleaningPriority determines the cleaning order based on logical rules
 func (world *LogicalWord) DetermineCleaningPriority() []string {
 	availableRooms := []string{
 		"Kitchen",
@@ -92,67 +90,63 @@ func (world *LogicalWord) DetermineCleaningPriority() []string {
 		"Sarah's Room",
 		"Johnny's Room",
 	}
-	// Rule: if no one is home them vacum all rooms starting from kitchen
 
+	// Rule: if no one is home vacuum all rooms starting from kitchen
 	if !world.Jack.IsHome && !world.Sarah.IsHome && !world.Johnny.IsHome {
 		fmt.Println("Logic: No one is home vacuuming all rooms starting with the kitchen")
 		return availableRooms
 	}
 
-	// Initialize a priority list with all available rooms
 	priorityList := make([]string, 0)
 	skipRooms := make(map[string]bool)
 
-	// Rule: if Sarah's home then don't vacuum living room
+	// Rule: if Sarah is home then don't vacuum living room
 	if world.Sarah.IsHome {
 		fmt.Println("Logic: Sarah is home skipping the living room")
 		skipRooms["Living Room"] = true
 	}
 
 	// Rule: if Johnny is home and his door is closed skip his room
-
 	if world.Johnny.IsHome && world.Johnny.DoorClosed {
-		fmt.Println("Logic: Johnny is home and his door is closed, skipping his room ")
-		skipRooms["Johny's Room"] = true
+		fmt.Println("Logic: Johnny is home and his door is closed, skipping his room")
+		skipRooms["Johnny's Room"] = true
 	}
 
 	// Rule: if Jack is home and it's a weekday do his room last
 	jackRoomLast := world.Jack.IsHome && world.IsWeekDay
 
-	// Build our Priority list. add kitchen first and filter out skip rooms
-
+	// Always start with kitchen
 	priorityList = append(priorityList, "Kitchen")
 
-	// Add all other rooms except Jack's if it needs to be last and skipped rooms
+	// Add all other rooms except Jack's (if it needs to be last) and skipped rooms
 	for _, room := range availableRooms {
 		if room == "Kitchen" {
 			continue
 		}
-
 		if room == "Jack's Room" && jackRoomLast {
 			continue // will be added last
 		}
-
 		if skipRooms[room] {
 			continue
 		}
 		priorityList = append(priorityList, room)
 	}
 
-	// Add Jack's room if it should be last
+	// Add Jack's room last if needed
 	if jackRoomLast && !skipRooms["Jack's Room"] {
 		priorityList = append(priorityList, "Jack's Room")
 	}
+
 	return priorityList
 }
 
-// Type for a robot for logic
+// RobotWithLogic embeds Robot and adds propositional logic world
 type RobotWithLogic struct {
-	*Robot // Embedding the original robot
-	World  *LogicalWord
+	*Robot
+	World *LogicalWord
 }
 
-// Factory method for a robot with Logic
+// NewRobotWithLogic creates a new robot with logic
 func NewRobotWithLogic(startX, startY int) *RobotWithLogic {
 	return &RobotWithLogic{
 		Robot: NewRobot(startX, startY),
@@ -161,70 +155,66 @@ func NewRobotWithLogic(startX, startY int) *RobotWithLogic {
 }
 
 func (robot *RobotWithLogic) ScanHouseWithLogic(house *House) map[string]int {
-	// Create a map which maps room indices to room names
-
 	roomNameToIndex := make(map[string]int)
+	assignedRooms := make(map[string]bool) // FIX: track assigned bed rooms properly
 
-	// Identify all rooms and generate our mapping
+	// Identify all rooms
 	for i, room := range house.Rooms {
 		roomName := ""
 
 		for x := range room.Width {
 			for y := range room.Height {
 				if room.Grid[x][y].Type == "furniture" {
+					// Identify room type from furniture
 					if roomName == "" {
 						switch room.Grid[x][y].ObstacleName {
 						case "bed":
-							if roomName == "" && roomNameToIndex["Jack's Room"] == 0 {
+							// FIX: use assignedRooms map instead of broken == 0 check
+							if !assignedRooms["Jack's Room"] {
 								roomName = "Jack's Room"
-							} else if roomNameToIndex["Sarah's Room"] == 0 && roomNameToIndex["Johnny's Room"] == 0 {
+							} else if !assignedRooms["Sarah's Room"] {
 								roomName = "Sarah's Room"
 							} else {
 								roomName = "Johnny's Room"
 							}
 						case "desk":
-							if roomName == "" {
-								roomName = "study"
-							}
+							roomName = "Study"
 						case "sofa", "tv":
 							roomName = "Living Room"
 						case "stove", "fridge", "sink":
 							roomName = "Kitchen"
 						}
 					}
-					// Johny's door
-					if room.Grid[x][y].ObstacleName == "johnny's door" {
-						// change to true close door
-						robot.World.UpdateDoorStatus("johny's door", false)
-					}
 
+					// Check for Johnny's door
+					if room.Grid[x][y].ObstacleName == "johnny's door" {
+						robot.World.UpdateDoorStatus("johnny's door", true)
+					}
 				}
 			}
 		}
 
-		// If we can't determine the name of the room give it a default name
 		if roomName == "" {
 			roomName = fmt.Sprintf("Room %d", i)
 		}
 
 		roomNameToIndex[roomName] = i
+		assignedRooms[roomName] = true // FIX: mark room as assigned
 		fmt.Printf("Identified room %s (index %d)\n", roomName, i)
 	}
 
-	// Scan the house for objects to build our logical world
-
+	// Scan for objects to update logical world
 	fmt.Println("Robot is scanning the house for objects...")
 	for _, room := range house.Rooms {
 		for x := range room.Width {
 			for y := range room.Height {
-				if room.Grid[x][y].Type == "furniture" && room.Grid[x][y].ObstacleName != "" {
-					robot.World.UpdateObjectFound(room.Grid[x][y].ObstacleName)
+				cell := room.Grid[x][y]
+				if cell.Type == "furniture" && cell.ObstacleName != "" {
+					robot.World.UpdateObjectFound(cell.ObstacleName)
 				}
 			}
 		}
 	}
-	// Determine my cleaning priority based on logical rules
-	cleaningPriority := robot.World.DetermineCleaningPriority()
-	fmt.Println("Cleaning priority determined: ", cleaningPriority)
+
 	return roomNameToIndex
 }

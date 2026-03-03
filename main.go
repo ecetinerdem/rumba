@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"time"
 )
 
 func main() {
@@ -41,35 +42,68 @@ func main() {
 
 		house = NewHouse(configFile, animate)
 	}
-
+	// Add cats to room in necessary
+	if cat {
+		for _, room := range house.Rooms {
+			room.Cat = NewCat(room)
+		}
+	}
 	roomCount := 0
 
 	if useLogic {
 		// Use propositional logic for cleaning
-		// rumba := newRobotWithLogic(1, 1)
+		fmt.Println("Using propositional logic for cleaning decisions")
+		rumba := NewRobotWithLogic(1, 1)
+
+		// Assign a cleaning algorithm
+		setUpAlgorithm(algorithm, rumba.Robot)
+		// Scan the house
+		roomNameToIndex := rumba.ScanHouseWithLogic(house)
+
+		fmt.Println("\nLogical state after scanning:")
+		fmt.Printf("Today is %s (Weekday: %t)\n", time.Now().Weekday(), rumba.World.IsWeekDay)
+		fmt.Printf("Jack is home: %t\n", rumba.World.Jack.IsHome)
+		fmt.Printf("Jack is home: %t\n", rumba.World.Sarah.IsHome)
+		fmt.Printf("Jack is home: %t\n", rumba.World.Johnny.IsHome)
+		fmt.Printf("Johnny's door closed: %t\n", rumba.World.Johnny.DoorClosed)
+
+		if rumba.World.Johnny.DoorClosed {
+			fmt.Println("Logic: Will not vacum Johnny's room")
+		} else {
+			fmt.Println("Logic: Will vacum Johnny's room")
+		}
+
+		// Determine cleaning priority based on logical rules
+		cleaningPriority := rumba.World.DetermineCleaningPriority()
+		fmt.Println("\nDetermined cleaning priority based on propositional logic:")
+		for i, roomName := range cleaningPriority {
+			fmt.Printf("%d. %s\n", i+1, roomName)
+		}
+
+		for k, v := range roomNameToIndex {
+			fmt.Println(k, "->", v)
+		}
+		fmt.Println("\n Press enter to start cleaning")
+
+		fmt.Scanln()
+
+		// Clean the rooms in priority order
+		// for
+		// Check to see if room exist
+		// Get the room from house.Rooms by index
+		// reset rumba position 1,1
+		// Clean the room
+		//end for
+
 	} else {
 		// Use the original cleaning approach without propositional approach and for multiple logic
 		for _, room := range house.Rooms {
-			if cat {
-				room.Cat = NewCat(room)
-			}
 
 			// Get a rumba
 			rumba := NewRobot(1, 1)
 
 			// Assign a cleaning algorithm
-			switch algorithm {
-			case "random":
-				rumba.CleanRoom = CleanRandomWalk
-			case "slam":
-				rumba.CleanRoom = CleanRoomSlam
-			case "spiral":
-				rumba.CleanRoom = CleanRoomSpiral
-			case "snake":
-				rumba.CleanRoom = CleanRoomSnake
-			default:
-				// Do nothing
-			}
+			setUpAlgorithm(algorithm, rumba)
 
 			// Clean the room
 			rumba.CleanRoom(room, rumba)
@@ -78,4 +112,19 @@ func main() {
 	}
 	fmt.Printf("All done. Cleaned a total of %d room(s)\n", roomCount)
 
+}
+
+func setUpAlgorithm(algorithm string, rumba *Robot) {
+	switch algorithm {
+	case "random":
+		rumba.CleanRoom = CleanRandomWalk
+	case "slam":
+		rumba.CleanRoom = CleanRoomSlam
+	case "spiral":
+		rumba.CleanRoom = CleanRoomSpiral
+	case "snake":
+		rumba.CleanRoom = CleanRoomSnake
+	default:
+		// Do nothing
+	}
 }

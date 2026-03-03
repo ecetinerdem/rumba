@@ -181,7 +181,7 @@ func NewHouse(configFile string, animate bool) *House {
 
 			for i := x; i < x+width; i++ {
 				for j := y; j < y+height; j++ {
-					grid[i][j] = Cell{Type: "furniture", Cleaned: false, Obstacle: true, ObstacleName: "furniture"}
+					grid[i][j] = Cell{Type: "furniture", Cleaned: false, Obstacle: true, ObstacleName: f.Name}
 				}
 			}
 		}
