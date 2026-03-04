@@ -88,12 +88,24 @@ func main() {
 		fmt.Scanln()
 
 		// Clean the rooms in priority order
-		// for
-		// Check to see if room exist
-		// Get the room from house.Rooms by index
-		// reset rumba position 1,1
-		// Clean the room
-		//end for
+		for _, roomName := range cleaningPriority {
+			// Check to see if room exist
+			roomIndex, exist := roomNameToIndex[roomName]
+			if !exist {
+				fmt.Printf("Room %s not found in the house, skipping\n", roomName)
+			}
+
+			// Get the room from house.Rooms by index
+			room := house.Rooms[roomIndex]
+			// reset rumba position 1,1
+			rumba.Position = Point{X: 1, Y: 1}
+			rumba.Path = []Point{{X: 1, Y: 1}}
+
+			// Clean the room
+			rumba.Robot.CleanRoom(room, rumba.Robot)
+			roomCount++
+
+		}
 
 	} else {
 		// Use the original cleaning approach without propositional approach and for multiple logic

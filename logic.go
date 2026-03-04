@@ -56,26 +56,38 @@ func (world *LogicalWord) UpdateObjectFound(objectName string) {
 
 	// Rule 1: If backpack found Jack is home
 	if objectName == "backpack" {
+		if !world.Jack.IsHome {
+			fmt.Println("Logic: Backpack found deducing Jack is home")
+		}
 		world.Jack.IsHome = true
-		fmt.Println("Logic: Backpack found deducing Jack is home")
+
 	}
 
 	// Rule 2: If bicycle found Sarah is home
 	if objectName == "bicycle" {
+		if !world.Sarah.IsHome {
+			fmt.Println("Logic: Bicycle found deducing Sarah is home")
+		}
 		world.Sarah.IsHome = true
-		fmt.Println("Logic: Bicycle found deducing Sarah is home")
+
 	}
 
 	// Rule 3: If skateboard found Johnny is home
 	if objectName == "skateboard" {
+		if !world.Johnny.IsHome {
+			fmt.Println("Logic: Skateboard found deducing Johnny is home")
+		}
 		world.Johnny.IsHome = true
-		fmt.Println("Logic: Skateboard found deducing Johnny is home")
+
 	}
 }
 
 // UpdateDoorStatus updates whether Johnny's door is open or closed
 func (world *LogicalWord) UpdateDoorStatus(doorName string, isClosed bool) {
 	if doorName == "johnny's door" {
+		if world.Johnny.DoorClosed == isClosed {
+			return // already set, skip
+		}
 		world.Johnny.DoorClosed = isClosed
 		fmt.Printf("Logic: Johnny's door is now %s\n", map[bool]string{true: "closed", false: "open"}[isClosed])
 	}
